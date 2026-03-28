@@ -1227,7 +1227,8 @@
             document.getElementById('chat-panel').classList.toggle('open', chatOpen);
             if (chatOpen) {
                 document.getElementById('chat-badge').classList.remove('visible');
-                renderChat();
+                renderedMsgCount = 0;
+                renderChat(true);
                 loadChat();
             }
         }
@@ -1245,10 +1246,11 @@
         ];
 
         let pickerMode = ''; // '', 'emoji', 'sticker'
+        let renderedMsgCount = 0; // Theo dõi số tin nhắn đã render
 
         function renderMsgContent(m) {
             if (m.type === 'image') {
-                return `<img src="${m.image}" onclick="event.stopPropagation(); previewImage('${m.image}')" alt="Hình ảnh">`;
+                return `<img src="${m.image}" onclick="event.stopPropagation(); previewImage(this.src)" alt="Hình ảnh">`;
             }
             if (m.type === 'sticker') {
                 return `<div class="sticker-msg">${escapeHtml(m.text)}</div>`;
@@ -1256,7 +1258,37 @@
             return `<div>${escapeHtml(m.text)}</div>`;
         }
 
-        function renderChat() {
+        function buildMsgHtml(m) {
+            const isMine = m.author === chatUser;
+            const time = new Date(m.time).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+            return `<div class="chat-msg-wrapper ${isMine ? 'mine' : 'other'}">
+                <div class="msg-author">${escapeHtml(m.author)}</div>
+                <div class="chat-bubble">
+                    ${renderMsgContent(m)}
+                    <div class="msg-time">${time}</div>
+                </div>
+            </div>`;
+        }
+
+        function buildPickerHtml() {
+            if (pickerMode === 'emoji') {
+                let emojiContent = Object.entries(EMOJIS).map(([cat, list]) =>
+                    `<div style="color:rgba(255,255,255,0.4);font-size:0.65rem;margin:6px 0 3px;font-weight:600">${cat}</div>
+                     <div class="emoji-grid">${list.map(e => `<span onclick="insertEmoji('${e}')">${e}</span>`).join('')}</div>`
+                ).join('');
+                return `<div class="picker-panel open">${emojiContent}</div>`;
+            }
+            if (pickerMode === 'sticker') {
+                let stickerContent = STICKERS.map(s =>
+                    `<span onclick="sendSticker('${s}')">${s}</span>`
+                ).join('');
+                return `<div class="picker-panel open"><div class="sticker-grid">${stickerContent}</div></div>`;
+            }
+            return '';
+        }
+
+        // Render đầy đủ lần đầu
+        function renderChatFull() {
             const body = document.getElementById('chat-body');
             if (!chatUser) {
                 body.innerHTML = `
@@ -1273,37 +1305,9 @@
                 return;
             }
 
-            let msgsHtml = '';
-            if (chatMessages.length === 0) {
-                msgsHtml = '<div class="chat-empty">Chưa có tin nhắn nào</div>';
-            } else {
-                msgsHtml = chatMessages.map(m => {
-                    const isMine = m.author === chatUser;
-                    const time = new Date(m.time).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
-                    return `<div class="chat-msg-wrapper ${isMine ? 'mine' : 'other'}">
-                        <div class="msg-author">${escapeHtml(m.author)}</div>
-                        <div class="chat-bubble">
-                            ${renderMsgContent(m)}
-                            <div class="msg-time">${time}</div>
-                        </div>
-                    </div>`;
-                }).join('');
-            }
-
-            // Picker HTML
-            let pickerHtml = '';
-            if (pickerMode === 'emoji') {
-                let emojiContent = Object.entries(EMOJIS).map(([cat, list]) =>
-                    `<div style="color:rgba(255,255,255,0.4);font-size:0.65rem;margin:6px 0 3px;font-weight:600">${cat}</div>
-                     <div class="emoji-grid">${list.map(e => `<span onclick="insertEmoji('${e}')">${e}</span>`).join('')}</div>`
-                ).join('');
-                pickerHtml = `<div class="picker-panel open">${emojiContent}</div>`;
-            } else if (pickerMode === 'sticker') {
-                let stickerContent = STICKERS.map(s =>
-                    `<span onclick="sendSticker('${s}')">${s}</span>`
-                ).join('');
-                pickerHtml = `<div class="picker-panel open"><div class="sticker-grid">${stickerContent}</div></div>`;
-            }
+            let msgsHtml = chatMessages.length === 0
+                ? '<div class="chat-empty">Chưa có tin nhắn nào</div>'
+                : chatMessages.map(m => buildMsgHtml(m)).join('');
 
             body.innerHTML = `
                 <div class="chat-messages" id="chat-messages">${msgsHtml}</div>
@@ -1312,15 +1316,46 @@
                     <button class="chat-tool-btn ${pickerMode==='sticker'?'active':''}" onclick="togglePicker('sticker')" title="Nhãn dán">🎭</button>
                     <button class="chat-tool-btn" onclick="document.getElementById('chat-file-input').click()" title="Gửi ảnh">🖼️</button>
                 </div>
-                ${pickerHtml}
+                <div id="picker-container">${buildPickerHtml()}</div>
                 <div class="chat-input-area">
                     <input type="text" id="chat-input" placeholder="Nhập tin nhắn..." maxlength="500">
                     <button class="chat-send-btn" onclick="sendMessage()">&#10148;</button>
                 </div>`;
 
+            renderedMsgCount = chatMessages.length;
             const msgContainer = document.getElementById('chat-messages');
             msgContainer.scrollTop = msgContainer.scrollHeight;
+            bindChatInput();
+        }
 
+        // Chỉ thêm tin nhắn mới vào DOM (không rebuild)
+        function appendNewMessages() {
+            const msgContainer = document.getElementById('chat-messages');
+            if (!msgContainer) return renderChatFull();
+
+            // Xóa "chưa có tin nhắn" nếu có
+            const empty = msgContainer.querySelector('.chat-empty');
+            if (empty) empty.remove();
+
+            // Chỉ thêm tin nhắn mới
+            for (let i = renderedMsgCount; i < chatMessages.length; i++) {
+                msgContainer.insertAdjacentHTML('beforeend', buildMsgHtml(chatMessages[i]));
+            }
+            renderedMsgCount = chatMessages.length;
+            msgContainer.scrollTop = msgContainer.scrollHeight;
+        }
+
+        // Render thông minh: full nếu chưa có DOM, append nếu đã có
+        function renderChat(forceFullRender) {
+            const msgContainer = document.getElementById('chat-messages');
+            if (forceFullRender || !msgContainer || !chatUser) {
+                renderChatFull();
+            } else {
+                appendNewMessages();
+            }
+        }
+
+        function bindChatInput() {
             setTimeout(() => {
                 const inp = document.getElementById('chat-input');
                 if (inp) {
@@ -1332,7 +1367,17 @@
 
         function togglePicker(mode) {
             pickerMode = pickerMode === mode ? '' : mode;
-            renderChat();
+            const container = document.getElementById('picker-container');
+            if (container) {
+                container.innerHTML = buildPickerHtml();
+                // Cập nhật nút active
+                document.querySelectorAll('.chat-toolbar .chat-tool-btn').forEach((btn, i) => {
+                    if (i === 0) btn.classList.toggle('active', pickerMode === 'emoji');
+                    if (i === 1) btn.classList.toggle('active', pickerMode === 'sticker');
+                });
+            } else {
+                renderChatFull();
+            }
         }
 
         function insertEmoji(emoji) {
@@ -1353,7 +1398,9 @@
             lastMsgCount = chatMessages.length;
             lastChatHash = JSON.stringify(chatMessages);
             pickerMode = '';
-            renderChat();
+            // Append sticker ngay lập tức
+            appendNewMessages();
+            togglePicker('');
             saveChatToServer();
         }
 
@@ -1396,7 +1443,7 @@
                 });
                 lastMsgCount = chatMessages.length;
                 lastChatHash = JSON.stringify(chatMessages);
-                renderChat();
+                appendNewMessages();
                 saveChatToServer();
             };
             img.src = URL.createObjectURL(file);
@@ -1446,7 +1493,7 @@
                 }
                 lastMsgCount = chatMessages.length;
 
-                if (chatOpen) renderChat();
+                if (chatOpen) appendNewMessages();
             } catch (err) {
                 // Lỗi tải chat
             }
@@ -1466,13 +1513,14 @@
             inp.value = '';
             lastMsgCount = chatMessages.length;
             lastChatHash = JSON.stringify(chatMessages);
-            pickerMode = '';
-            renderChat();
+            // Chỉ append tin nhắn mới, không rebuild - giữ input focus
+            appendNewMessages();
+            inp.focus();
             saveChatToServer();
         }
 
         // Tải tin nhắn mỗi 10 giây
-        setInterval(() => { if (chatUser) loadChat(); }, 10000);
+        setInterval(() => { if (chatUser) loadChat(); }, 5000);
 
         // Khởi chạy
         initBin();
