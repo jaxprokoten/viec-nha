@@ -13,14 +13,118 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(-45deg, #0f0c29, #302b63, #24243e, #1a1a2e);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
             min-height: 100vh;
             padding: 20px;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .bg-shapes {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .bg-shapes span {
+            position: absolute;
+            border-radius: 50%;
+            opacity: 0.07;
+            animation: floatUp linear infinite;
+        }
+
+        .bg-shapes span:nth-child(1) {
+            width: 80px; height: 80px;
+            background: #ff6b6b;
+            left: 10%; bottom: -80px;
+            animation-duration: 18s;
+            animation-delay: 0s;
+        }
+        .bg-shapes span:nth-child(2) {
+            width: 60px; height: 60px;
+            background: #00c9ff;
+            left: 30%; bottom: -60px;
+            animation-duration: 22s;
+            animation-delay: 3s;
+        }
+        .bg-shapes span:nth-child(3) {
+            width: 120px; height: 120px;
+            background: #92fe9d;
+            left: 55%; bottom: -120px;
+            animation-duration: 25s;
+            animation-delay: 1s;
+        }
+        .bg-shapes span:nth-child(4) {
+            width: 50px; height: 50px;
+            background: #ffd93d;
+            left: 75%; bottom: -50px;
+            animation-duration: 20s;
+            animation-delay: 5s;
+        }
+        .bg-shapes span:nth-child(5) {
+            width: 100px; height: 100px;
+            background: #c084fc;
+            left: 90%; bottom: -100px;
+            animation-duration: 28s;
+            animation-delay: 2s;
+        }
+        .bg-shapes span:nth-child(6) {
+            width: 70px; height: 70px;
+            background: #fb7185;
+            left: 45%; bottom: -70px;
+            animation-duration: 16s;
+            animation-delay: 7s;
+        }
+        .bg-shapes span:nth-child(7) {
+            width: 90px; height: 90px;
+            background: #38bdf8;
+            left: 5%; bottom: -90px;
+            animation-duration: 24s;
+            animation-delay: 4s;
+        }
+        .bg-shapes span:nth-child(8) {
+            width: 40px; height: 40px;
+            background: #fbbf24;
+            left: 65%; bottom: -40px;
+            animation-duration: 19s;
+            animation-delay: 6s;
+        }
+
+        @keyframes floatUp {
+            0% {
+                transform: translateY(0) rotate(0deg) scale(1);
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.07;
+            }
+            90% {
+                opacity: 0.07;
+            }
+            100% {
+                transform: translateY(-110vh) rotate(720deg) scale(0.5);
+                opacity: 0;
+            }
         }
 
         .container {
             max-width: 600px;
             margin: 0 auto;
+            position: relative;
+            z-index: 1;
         }
 
         header {
@@ -35,11 +139,12 @@
         }
 
         .progress-section {
-            background: rgba(255, 255, 255, 0.15);
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 16px;
             padding: 20px;
             margin-bottom: 24px;
-            backdrop-filter: blur(10px);
+            backdrop-filter: blur(20px);
         }
 
         .progress-text {
@@ -74,16 +179,23 @@
         .add-section input {
             flex: 1;
             padding: 14px 18px;
-            border: none;
+            border: 1px solid rgba(255, 255, 255, 0.15);
             border-radius: 12px;
             font-size: 1rem;
             outline: none;
-            background: white;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            color: white;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
         }
 
         .add-section input::placeholder {
-            color: #aaa;
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .add-section input:focus {
+            border-color: rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.15);
         }
 
         .add-section button {
@@ -143,11 +255,13 @@
             display: flex;
             align-items: center;
             gap: 14px;
-            background: white;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.12);
             padding: 16px 18px;
             border-radius: 14px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
-            transition: transform 0.2s, opacity 0.3s, box-shadow 0.2s;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            transition: transform 0.2s, opacity 0.3s, box-shadow 0.2s, background 0.2s;
             animation: slideIn 0.3s ease;
             user-select: none;
         }
@@ -165,6 +279,8 @@
 
         .task-item:hover {
             transform: translateY(-2px);
+            background: rgba(255, 255, 255, 0.12);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
         }
 
         .task-item.dragging {
@@ -179,7 +295,7 @@
 
         .drag-handle {
             cursor: grab;
-            color: #ccc;
+            color: rgba(255, 255, 255, 0.25);
             font-size: 1.2rem;
             flex-shrink: 0;
             display: flex;
@@ -191,7 +307,7 @@
         }
 
         .drag-handle:hover {
-            color: #888;
+            color: rgba(255, 255, 255, 0.6);
         }
 
         .drag-handle:active {
@@ -204,7 +320,7 @@
 
         .task-item.done .task-name {
             text-decoration: line-through;
-            color: #aaa;
+            color: rgba(255, 255, 255, 0.3);
         }
 
         .checkbox-wrapper {
@@ -226,7 +342,7 @@
         .checkmark {
             width: 26px;
             height: 26px;
-            border: 2.5px solid #d0d0d0;
+            border: 2.5px solid rgba(255, 255, 255, 0.3);
             border-radius: 8px;
             display: flex;
             align-items: center;
@@ -256,7 +372,7 @@
         .task-name {
             flex: 1;
             font-size: 1rem;
-            color: #333;
+            color: rgba(255, 255, 255, 0.9);
             word-break: break-word;
         }
 
@@ -281,14 +397,14 @@
 
         .task-date {
             font-size: 0.75rem;
-            color: #bbb;
+            color: rgba(255, 255, 255, 0.4);
             white-space: nowrap;
         }
 
         .delete-btn {
             background: none;
             border: none;
-            color: #ddd;
+            color: rgba(255, 255, 255, 0.3);
             font-size: 1.3rem;
             cursor: pointer;
             padding: 4px 8px;
@@ -299,7 +415,7 @@
 
         .delete-btn:hover {
             color: #ff6b6b;
-            background: #fff0f0;
+            background: rgba(255, 107, 107, 0.15);
         }
 
         .empty-state {
@@ -347,6 +463,10 @@
     </style>
 </head>
 <body>
+    <div class="bg-shapes">
+        <span></span><span></span><span></span><span></span>
+        <span></span><span></span><span></span><span></span>
+    </div>
     <div class="container">
         <header>
             <h1>Quản lý việc nhà</h1>
