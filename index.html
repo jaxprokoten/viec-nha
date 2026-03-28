@@ -814,25 +814,32 @@
         }
 
         async function initBin() {
-            await loadTasks();
+            await loadTasks(true);
         }
 
-        // Đọc dữ liệu từ JSONBin
-        async function loadTasks() {
-            showSync('Đang tải...');
+        // Đọc dữ liệu từ JSONBin (chỉ render khi dữ liệu thay đổi)
+        let lastTasksHash = '';
+        async function loadTasks(forceRender) {
             try {
                 const res = await fetch(`${API_URL}/${BIN_ID}/latest`, {
                     headers: { 'X-Master-Key': JSONBIN_KEY }
                 });
                 const data = await res.json();
                 const record = data.record;
-                tasks = record && record.tasks ? record.tasks : (Array.isArray(record) ? record : []);
-                render();
+                const newTasks = record && record.tasks ? record.tasks : (Array.isArray(record) ? record : []);
+                const newHash = JSON.stringify(newTasks);
+                if (forceRender || newHash !== lastTasksHash) {
+                    tasks = newTasks;
+                    lastTasksHash = newHash;
+                    render();
+                }
                 showSync('Đã đồng bộ lúc ' + new Date().toLocaleTimeString('vi-VN'));
             } catch (err) {
+                if (forceRender) {
+                    tasks = [];
+                    render();
+                }
                 showSync('Lỗi tải dữ liệu.');
-                tasks = [];
-                render();
             }
         }
 
@@ -840,6 +847,7 @@
         function save() {
             // Render ngay trên giao diện
             render();
+            lastTasksHash = JSON.stringify(tasks);
             // Debounce: đợi 500ms rồi mới gửi lên server
             clearTimeout(saveTimeout);
             saveTimeout = setTimeout(async () => {
@@ -1127,6 +1135,7 @@
             loadChat();
         }
 
+        let lastChatHash = '';
         async function loadChat() {
             try {
                 const res = await fetch(`${API_URL}/${CHAT_BIN_ID}/latest`, {
@@ -1134,11 +1143,17 @@
                 });
                 const data = await res.json();
                 const record = data.record;
-                chatMessages = record && record.messages ? record.messages : [];
-                // Giữ tối đa 100 tin nhắn gần nhất
-                if (chatMessages.length > 100) chatMessages = chatMessages.slice(-100);
+                const newMessages = record && record.messages ? record.messages : [];
+                if (newMessages.length > 100) newMessages.splice(0, newMessages.length - 100);
+                const newHash = JSON.stringify(newMessages);
 
-                if (chatMessages.length > lastMsgCount && lastMsgCount > 0) {
+                if (newHash === lastChatHash) return; // Không thay đổi, bỏ qua
+
+                const hadNewMessages = newMessages.length > lastMsgCount && lastMsgCount > 0;
+                chatMessages = newMessages;
+                lastChatHash = newHash;
+
+                if (hadNewMessages) {
                     playNotificationSound();
                     if (!chatOpen) {
                         const badge = document.getElementById('chat-badge');
@@ -1166,6 +1181,8 @@
             });
 
             inp.value = '';
+            lastMsgCount = chatMessages.length;
+            lastChatHash = JSON.stringify(chatMessages);
             renderChat();
 
             try {
