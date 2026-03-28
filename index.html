@@ -644,9 +644,35 @@
             text-align: right;
         }
 
-        .chat-input-area {
-            padding: 12px;
+        .chat-toolbar {
+            display: flex;
+            gap: 2px;
+            padding: 6px 12px 0;
             border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .chat-tool-btn {
+            width: 34px;
+            height: 34px;
+            border: none;
+            border-radius: 8px;
+            background: transparent;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 1.1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s, color 0.2s;
+        }
+
+        .chat-tool-btn:hover, .chat-tool-btn.active {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .chat-input-area {
+            padding: 6px 12px 12px;
             display: flex;
             gap: 8px;
         }
@@ -688,6 +714,130 @@
 
         .chat-send-btn:hover {
             transform: scale(1.1);
+        }
+
+        /* Picker panel (emoji & stickers) */
+        .picker-panel {
+            display: none;
+            max-height: 200px;
+            overflow-y: auto;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 8px;
+        }
+
+        .picker-panel.open {
+            display: block;
+        }
+
+        .picker-panel::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .picker-panel::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 4px;
+        }
+
+        .picker-tabs {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 8px;
+        }
+
+        .picker-tabs button {
+            padding: 4px 12px;
+            border: none;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.08);
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.7rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .picker-tabs button.active {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        .emoji-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 2px;
+        }
+
+        .emoji-grid span {
+            font-size: 1.3rem;
+            text-align: center;
+            padding: 4px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+
+        .emoji-grid span:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .sticker-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 4px;
+        }
+
+        .sticker-grid span {
+            font-size: 2.5rem;
+            text-align: center;
+            padding: 8px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: background 0.15s, transform 0.15s;
+        }
+
+        .sticker-grid span:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: scale(1.15);
+        }
+
+        /* Chat images */
+        .chat-bubble img {
+            max-width: 100%;
+            max-height: 180px;
+            border-radius: 10px;
+            margin-top: 4px;
+            cursor: pointer;
+        }
+
+        .chat-bubble img:hover {
+            opacity: 0.9;
+        }
+
+        .chat-bubble .sticker-msg {
+            font-size: 3rem;
+            line-height: 1.2;
+        }
+
+        /* Image preview */
+        .img-preview-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            z-index: 99999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .img-preview-overlay.open {
+            display: flex;
+        }
+
+        .img-preview-overlay img {
+            max-width: 90%;
+            max-height: 90%;
+            border-radius: 12px;
         }
 
         .chat-name-prompt {
@@ -782,6 +932,13 @@
 
         <div class="sync-status" id="sync-status"></div>
     </div>
+
+    <!-- Image preview overlay -->
+    <div class="img-preview-overlay" id="img-preview" onclick="this.classList.remove('open')">
+        <img id="img-preview-src" src="">
+    </div>
+
+    <input type="file" id="chat-file-input" accept="image/*" style="display:none" onchange="handleImageUpload(event)">
 
     <!-- Chat -->
     <button class="chat-toggle" id="chat-toggle-btn" onclick="toggleChat()" title="Nhắn tin">
@@ -1075,6 +1232,30 @@
             }
         }
 
+        const EMOJIS = {
+            'Mặt cười': ['😀','😂','🤣','😊','😍','🥰','😘','😜','🤗','🤩','😎','🥳','😇','🤔','🤫','🤭','😏','😴','😋','🤤','😱','😭','😤','🥺','😈'],
+            'Tay & Tim': ['👍','👎','👏','🙌','🤝','✌️','🤞','💪','❤️','🧡','💛','💚','💙','💜','🖤','💯','💥','🔥','⭐','✨','💫','🎉','🎊','💐','🌹'],
+            'Đồ vật': ['🏠','🧹','🧺','🧽','🍳','🍽️','☕','🛒','📱','💻','🔑','🛏️','🚿','🧼','👕','👖','🧦','📦','🗑️','💡','⏰','📅','✅','❌','⚠️']
+        };
+
+        const STICKERS = [
+            '🎉','🥳','💪😤','👏👏👏','🏆','❤️‍🔥',
+            '😴💤','🧹✨','🍳🥘','👕👖','🛒🏃','✅💯',
+            '😭😭','🤦','💀','🫡','🥹','🤡'
+        ];
+
+        let pickerMode = ''; // '', 'emoji', 'sticker'
+
+        function renderMsgContent(m) {
+            if (m.type === 'image') {
+                return `<img src="${m.image}" onclick="event.stopPropagation(); previewImage('${m.image}')" alt="Hình ảnh">`;
+            }
+            if (m.type === 'sticker') {
+                return `<div class="sticker-msg">${escapeHtml(m.text)}</div>`;
+            }
+            return `<div>${escapeHtml(m.text)}</div>`;
+        }
+
         function renderChat() {
             const body = document.getElementById('chat-body');
             if (!chatUser) {
@@ -1102,15 +1283,36 @@
                     return `<div class="chat-msg-wrapper ${isMine ? 'mine' : 'other'}">
                         <div class="msg-author">${escapeHtml(m.author)}</div>
                         <div class="chat-bubble">
-                            <div>${escapeHtml(m.text)}</div>
+                            ${renderMsgContent(m)}
                             <div class="msg-time">${time}</div>
                         </div>
                     </div>`;
                 }).join('');
             }
 
+            // Picker HTML
+            let pickerHtml = '';
+            if (pickerMode === 'emoji') {
+                let emojiContent = Object.entries(EMOJIS).map(([cat, list]) =>
+                    `<div style="color:rgba(255,255,255,0.4);font-size:0.65rem;margin:6px 0 3px;font-weight:600">${cat}</div>
+                     <div class="emoji-grid">${list.map(e => `<span onclick="insertEmoji('${e}')">${e}</span>`).join('')}</div>`
+                ).join('');
+                pickerHtml = `<div class="picker-panel open">${emojiContent}</div>`;
+            } else if (pickerMode === 'sticker') {
+                let stickerContent = STICKERS.map(s =>
+                    `<span onclick="sendSticker('${s}')">${s}</span>`
+                ).join('');
+                pickerHtml = `<div class="picker-panel open"><div class="sticker-grid">${stickerContent}</div></div>`;
+            }
+
             body.innerHTML = `
                 <div class="chat-messages" id="chat-messages">${msgsHtml}</div>
+                <div class="chat-toolbar">
+                    <button class="chat-tool-btn ${pickerMode==='emoji'?'active':''}" onclick="togglePicker('emoji')" title="Emoji">😊</button>
+                    <button class="chat-tool-btn ${pickerMode==='sticker'?'active':''}" onclick="togglePicker('sticker')" title="Nhãn dán">🎭</button>
+                    <button class="chat-tool-btn" onclick="document.getElementById('chat-file-input').click()" title="Gửi ảnh">🖼️</button>
+                </div>
+                ${pickerHtml}
                 <div class="chat-input-area">
                     <input type="text" id="chat-input" placeholder="Nhập tin nhắn..." maxlength="500">
                     <button class="chat-send-btn" onclick="sendMessage()">&#10148;</button>
@@ -1121,8 +1323,89 @@
 
             setTimeout(() => {
                 const inp = document.getElementById('chat-input');
-                if (inp) inp.addEventListener('keydown', e => { if (e.key === 'Enter') sendMessage(); });
+                if (inp) {
+                    inp.addEventListener('keydown', e => { if (e.key === 'Enter') sendMessage(); });
+                    if (pickerMode === '') inp.focus();
+                }
             }, 50);
+        }
+
+        function togglePicker(mode) {
+            pickerMode = pickerMode === mode ? '' : mode;
+            renderChat();
+        }
+
+        function insertEmoji(emoji) {
+            const inp = document.getElementById('chat-input');
+            if (inp) {
+                inp.value += emoji;
+                inp.focus();
+            }
+        }
+
+        function sendSticker(sticker) {
+            chatMessages.push({
+                author: chatUser,
+                text: sticker,
+                type: 'sticker',
+                time: Date.now()
+            });
+            lastMsgCount = chatMessages.length;
+            lastChatHash = JSON.stringify(chatMessages);
+            pickerMode = '';
+            renderChat();
+            saveChatToServer();
+        }
+
+        function saveChatToServer() {
+            fetch(`${API_URL}/${CHAT_BIN_ID}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Master-Key': JSONBIN_KEY
+                },
+                body: JSON.stringify({ messages: chatMessages })
+            }).catch(() => {});
+        }
+
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            if (file.size > 5 * 1024 * 1024) {
+                alert('Ảnh quá lớn! Tối đa 5MB.');
+                return;
+            }
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const img = new Image();
+            img.onload = () => {
+                const maxW = 300, maxH = 300;
+                let w = img.width, h = img.height;
+                if (w > maxW) { h = h * maxW / w; w = maxW; }
+                if (h > maxH) { w = w * maxH / h; h = maxH; }
+                canvas.width = w;
+                canvas.height = h;
+                ctx.drawImage(img, 0, 0, w, h);
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
+                chatMessages.push({
+                    author: chatUser,
+                    text: '',
+                    type: 'image',
+                    image: dataUrl,
+                    time: Date.now()
+                });
+                lastMsgCount = chatMessages.length;
+                lastChatHash = JSON.stringify(chatMessages);
+                renderChat();
+                saveChatToServer();
+            };
+            img.src = URL.createObjectURL(file);
+            event.target.value = '';
+        }
+
+        function previewImage(src) {
+            document.getElementById('img-preview-src').src = src;
+            document.getElementById('img-preview').classList.add('open');
         }
 
         function setChatName() {
@@ -1169,7 +1452,7 @@
             }
         }
 
-        async function sendMessage() {
+        function sendMessage() {
             const inp = document.getElementById('chat-input');
             const text = inp ? inp.value.trim() : '';
             if (!text) return;
@@ -1183,21 +1466,9 @@
             inp.value = '';
             lastMsgCount = chatMessages.length;
             lastChatHash = JSON.stringify(chatMessages);
+            pickerMode = '';
             renderChat();
-
-            try {
-                await fetch(`${API_URL}/${CHAT_BIN_ID}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-Master-Key': JSONBIN_KEY
-                    },
-                    body: JSON.stringify({ messages: chatMessages })
-                });
-                lastMsgCount = chatMessages.length;
-            } catch (err) {
-                // Lỗi gửi tin nhắn
-            }
+            saveChatToServer();
         }
 
         // Tải tin nhắn mỗi 10 giây
