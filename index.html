@@ -386,7 +386,7 @@
     <script>
         // ========== CẤU HÌNH JSONBIN ==========
         const JSONBIN_KEY = '$2a$10$N.17TNBDmRXgfwSBSGf4nuvK.szun57XY2SQjhpS5yLa054orS5ae';
-        let BIN_ID = localStorage.getItem('housework-bin-id') || '';
+        const BIN_ID = '69c79236c3097a1dd56be797';
         // ======================================
 
         const API_URL = 'https://api.jsonbin.io/v3/b';
@@ -398,31 +398,8 @@
             document.getElementById('sync-status').textContent = msg;
         }
 
-        // Tạo bin mới nếu chưa có
         async function initBin() {
-            if (BIN_ID) {
-                await loadTasks();
-                return;
-            }
-            showSync('Đang khởi tạo...');
-            try {
-                const res = await fetch(API_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-Master-Key': JSONBIN_KEY,
-                        'X-Bin-Name': 'viec-nha'
-                    },
-                    body: JSON.stringify([])
-                });
-                const data = await res.json();
-                BIN_ID = data.metadata.id;
-                localStorage.setItem('housework-bin-id', BIN_ID);
-                showSync('Đã khởi tạo! Chia sẻ link kèm mã: ' + BIN_ID);
-                render();
-            } catch (err) {
-                showSync('Lỗi khởi tạo. Kiểm tra lại API Key.');
-            }
+            await loadTasks();
         }
 
         // Đọc dữ liệu từ JSONBin
@@ -433,7 +410,8 @@
                     headers: { 'X-Master-Key': JSONBIN_KEY }
                 });
                 const data = await res.json();
-                tasks = Array.isArray(data.record) ? data.record : [];
+                const record = data.record;
+                tasks = record && record.tasks ? record.tasks : (Array.isArray(record) ? record : []);
                 render();
                 showSync('Đã đồng bộ lúc ' + new Date().toLocaleTimeString('vi-VN'));
             } catch (err) {
@@ -458,7 +436,7 @@
                             'Content-Type': 'application/json',
                             'X-Master-Key': JSONBIN_KEY
                         },
-                        body: JSON.stringify(tasks)
+                        body: JSON.stringify({ tasks: tasks })
                     });
                     showSync('Đã lưu lúc ' + new Date().toLocaleTimeString('vi-VN'));
                 } catch (err) {
