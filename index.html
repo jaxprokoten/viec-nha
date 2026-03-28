@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý việc nhà</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        header h1 {
+            font-size: 2rem;
+            margin-bottom: 8px;
+        }
+
+        .progress-section {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 24px;
+            backdrop-filter: blur(10px);
+        }
+
+        .progress-text {
+            color: white;
+            font-size: 0.95rem;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .progress-bar {
+            background: rgba(255, 255, 255, 0.25);
+            border-radius: 10px;
+            height: 14px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            background: linear-gradient(90deg, #00c9ff, #92fe9d);
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.4s ease;
+            width: 0%;
+        }
+
+        .add-section {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .add-section input {
+            flex: 1;
+            padding: 14px 18px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            outline: none;
+            background: white;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .add-section input::placeholder {
+            color: #aaa;
+        }
+
+        .add-section button {
+            padding: 14px 24px;
+            border: none;
+            border-radius: 12px;
+            background: #ff6b6b;
+            color: white;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
+            white-space: nowrap;
+        }
+
+        .add-section button:hover {
+            background: #ee5a5a;
+            transform: translateY(-1px);
+        }
+
+        .add-section button:active {
+            transform: translateY(0);
+        }
+
+        .filter-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .filter-tabs button {
+            padding: 8px 18px;
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            border-radius: 20px;
+            background: transparent;
+            color: white;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .filter-tabs button.active {
+            background: white;
+            color: #764ba2;
+            border-color: white;
+            font-weight: 600;
+        }
+
+        .task-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .task-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            background: white;
+            padding: 16px 18px;
+            border-radius: 14px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            transition: transform 0.2s, opacity 0.3s, box-shadow 0.2s;
+            animation: slideIn 0.3s ease;
+            user-select: none;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .task-item:hover {
+            transform: translateY(-2px);
+        }
+
+        .task-item.dragging {
+            opacity: 0.4;
+            transform: scale(0.98);
+        }
+
+        .task-item.drag-over {
+            border-top: 3px solid #667eea;
+            margin-top: -3px;
+        }
+
+        .drag-handle {
+            cursor: grab;
+            color: #ccc;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            padding: 2px 4px;
+            border-radius: 4px;
+            transition: color 0.2s;
+            line-height: 1;
+        }
+
+        .drag-handle:hover {
+            color: #888;
+        }
+
+        .drag-handle:active {
+            cursor: grabbing;
+        }
+
+        .task-item.done {
+            opacity: 0.6;
+        }
+
+        .task-item.done .task-name {
+            text-decoration: line-through;
+            color: #aaa;
+        }
+
+        .checkbox-wrapper {
+            position: relative;
+            width: 26px;
+            height: 26px;
+            flex-shrink: 0;
+        }
+
+        .checkbox-wrapper input {
+            position: absolute;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+            z-index: 1;
+        }
+
+        .checkmark {
+            width: 26px;
+            height: 26px;
+            border: 2.5px solid #d0d0d0;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .checkbox-wrapper input:checked + .checkmark {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-color: transparent;
+        }
+
+        .checkmark::after {
+            content: '';
+            width: 7px;
+            height: 12px;
+            border: solid white;
+            border-width: 0 2.5px 2.5px 0;
+            transform: rotate(45deg) scale(0);
+            transition: transform 0.2s;
+        }
+
+        .checkbox-wrapper input:checked + .checkmark::after {
+            transform: rotate(45deg) scale(1);
+        }
+
+        .task-name {
+            flex: 1;
+            font-size: 1rem;
+            color: #333;
+            word-break: break-word;
+        }
+
+        .task-status {
+            font-size: 0.7rem;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 20px;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .task-status.in-progress {
+            background: #fff3e0;
+            color: #f57c00;
+        }
+
+        .task-status.completed {
+            background: #e8f5e9;
+            color: #388e3c;
+        }
+
+        .task-date {
+            font-size: 0.75rem;
+            color: #bbb;
+            white-space: nowrap;
+        }
+
+        .delete-btn {
+            background: none;
+            border: none;
+            color: #ddd;
+            font-size: 1.3rem;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 8px;
+            transition: color 0.2s, background 0.2s;
+            flex-shrink: 0;
+        }
+
+        .delete-btn:hover {
+            color: #ff6b6b;
+            background: #fff0f0;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.7);
+            padding: 40px 20px;
+            font-size: 1.1rem;
+        }
+
+        .clear-done {
+            display: none;
+            margin-top: 16px;
+            padding: 10px 20px;
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            border-radius: 10px;
+            background: transparent;
+            color: white;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            width: 100%;
+        }
+
+        .clear-done:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .clear-done.visible {
+            display: block;
+        }
+
+        .loading {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.7);
+            padding: 40px 20px;
+            font-size: 1.1rem;
+        }
+
+        .sync-status {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.75rem;
+            margin-top: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Quản lý việc nhà</h1>
+            <p>Theo dõi tiến trình hoàn thành công việc</p>
+        </header>
+
+        <div class="progress-section">
+            <div class="progress-text">
+                <span id="progress-label">0 / 0 hoàn thành</span>
+                <span id="progress-percent">0%</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+        </div>
+
+        <div class="add-section">
+            <input type="text" id="task-input" placeholder="Thêm công việc mới..." autofocus>
+            <button onclick="addTask()">Thêm</button>
+        </div>
+
+        <div class="filter-tabs">
+            <button class="active" onclick="setFilter('all', this)">Tất cả</button>
+            <button onclick="setFilter('pending', this)">Chưa xong</button>
+            <button onclick="setFilter('done', this)">Đã xong</button>
+        </div>
+
+        <div class="task-list" id="task-list">
+            <div class="loading">Đang tải dữ liệu...</div>
+        </div>
+
+        <button class="clear-done" id="clear-done" onclick="clearDone()">Xóa các việc đã hoàn thành</button>
+
+        <div class="sync-status" id="sync-status"></div>
+    </div>
+
+    <script>
+        // ========== CẤU HÌNH JSONBIN ==========
+        const JSONBIN_KEY = '$2a$10$N.17TNBDmRXgfwSBSGf4nuvK.szun57XY2SQjhpS5yLa054orS5ae';
+        let BIN_ID = localStorage.getItem('housework-bin-id') || '';
+        // ======================================
+
+        const API_URL = 'https://api.jsonbin.io/v3/b';
+        let tasks = [];
+        let currentFilter = 'all';
+        let saveTimeout = null;
+
+        function showSync(msg) {
+            document.getElementById('sync-status').textContent = msg;
+        }
+
+        // Tạo bin mới nếu chưa có
+        async function initBin() {
+            if (BIN_ID) {
+                await loadTasks();
+                return;
+            }
+            showSync('Đang khởi tạo...');
+            try {
+                const res = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Master-Key': JSONBIN_KEY,
+                        'X-Bin-Name': 'viec-nha'
+                    },
+                    body: JSON.stringify([])
+                });
+                const data = await res.json();
+                BIN_ID = data.metadata.id;
+                localStorage.setItem('housework-bin-id', BIN_ID);
+                showSync('Đã khởi tạo! Chia sẻ link kèm mã: ' + BIN_ID);
+                render();
+            } catch (err) {
+                showSync('Lỗi khởi tạo. Kiểm tra lại API Key.');
+            }
+        }
+
+        // Đọc dữ liệu từ JSONBin
+        async function loadTasks() {
+            showSync('Đang tải...');
+            try {
+                const res = await fetch(`${API_URL}/${BIN_ID}/latest`, {
+                    headers: { 'X-Master-Key': JSONBIN_KEY }
+                });
+                const data = await res.json();
+                tasks = Array.isArray(data.record) ? data.record : [];
+                render();
+                showSync('Đã đồng bộ lúc ' + new Date().toLocaleTimeString('vi-VN'));
+            } catch (err) {
+                showSync('Lỗi tải dữ liệu.');
+                tasks = [];
+                render();
+            }
+        }
+
+        // Lưu dữ liệu lên JSONBin (có debounce để tránh gọi API quá nhiều)
+        function save() {
+            // Render ngay trên giao diện
+            render();
+            // Debounce: đợi 500ms rồi mới gửi lên server
+            clearTimeout(saveTimeout);
+            saveTimeout = setTimeout(async () => {
+                showSync('Đang lưu...');
+                try {
+                    await fetch(`${API_URL}/${BIN_ID}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Master-Key': JSONBIN_KEY
+                        },
+                        body: JSON.stringify(tasks)
+                    });
+                    showSync('Đã lưu lúc ' + new Date().toLocaleTimeString('vi-VN'));
+                } catch (err) {
+                    showSync('Lỗi lưu dữ liệu. Thử lại...');
+                }
+            }, 500);
+        }
+
+        // Tự động tải lại dữ liệu mỗi 30 giây
+        setInterval(() => {
+            if (BIN_ID) loadTasks();
+        }, 30000);
+
+        function formatDate(timestamp) {
+            const d = new Date(timestamp);
+            const day = String(d.getDate()).padStart(2, '0');
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            return `${day}/${month}`;
+        }
+
+        function updateProgress() {
+            const total = tasks.length;
+            const done = tasks.filter(t => t.done).length;
+            const percent = total === 0 ? 0 : Math.round((done / total) * 100);
+
+            document.getElementById('progress-label').textContent = `${done} / ${total} hoàn thành`;
+            document.getElementById('progress-percent').textContent = `${percent}%`;
+            document.getElementById('progress-fill').style.width = `${percent}%`;
+
+            const clearBtn = document.getElementById('clear-done');
+            clearBtn.classList.toggle('visible', done > 0);
+        }
+
+        function render() {
+            const list = document.getElementById('task-list');
+            const filtered = tasks.filter(t => {
+                if (currentFilter === 'pending') return !t.done;
+                if (currentFilter === 'done') return t.done;
+                return true;
+            });
+
+            if (filtered.length === 0) {
+                const messages = {
+                    all: 'Chưa có công việc nào. Hãy thêm việc mới!',
+                    pending: 'Tuyệt vời! Đã hoàn thành tất cả!',
+                    done: 'Chưa có việc nào được hoàn thành.'
+                };
+                list.innerHTML = `<div class="empty-state">${messages[currentFilter]}</div>`;
+            } else {
+                list.innerHTML = filtered.map(task => `
+                    <div class="task-item ${task.done ? 'done' : ''}" draggable="true" data-id="${task.id}">
+                        <span class="drag-handle" title="Kéo để di chuyển">&#9776;</span>
+                        <label class="checkbox-wrapper">
+                            <input type="checkbox" ${task.done ? 'checked' : ''} onchange="toggleTask('${task.id}')">
+                            <span class="checkmark"></span>
+                        </label>
+                        <span class="task-name">${escapeHtml(task.name)}</span>
+                        <span class="task-status ${task.done ? 'completed' : 'in-progress'}">${task.done ? 'Hoàn thành' : 'Đang làm'}</span>
+                        <span class="task-date">${formatDate(task.createdAt)}</span>
+                        <button class="delete-btn" onclick="deleteTask('${task.id}')" title="Xóa">&times;</button>
+                    </div>
+                `).join('');
+                initDragAndDrop();
+            }
+
+            updateProgress();
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function addTask() {
+            const input = document.getElementById('task-input');
+            const name = input.value.trim();
+            if (!name) return;
+
+            tasks.unshift({
+                id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+                name: name,
+                done: false,
+                createdAt: Date.now()
+            });
+
+            input.value = '';
+            input.focus();
+            save();
+        }
+
+        function toggleTask(id) {
+            const task = tasks.find(t => t.id === id);
+            if (task) {
+                task.done = !task.done;
+                save();
+            }
+        }
+
+        function deleteTask(id) {
+            tasks = tasks.filter(t => t.id !== id);
+            save();
+        }
+
+        function clearDone() {
+            tasks = tasks.filter(t => !t.done);
+            save();
+        }
+
+        function setFilter(filter, btn) {
+            currentFilter = filter;
+            document.querySelectorAll('.filter-tabs button').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            render();
+        }
+
+        let draggedId = null;
+
+        function initDragAndDrop() {
+            const items = document.querySelectorAll('.task-item[draggable]');
+            items.forEach(item => {
+                item.addEventListener('dragstart', e => {
+                    draggedId = item.dataset.id;
+                    item.classList.add('dragging');
+                    e.dataTransfer.effectAllowed = 'move';
+                });
+
+                item.addEventListener('dragend', () => {
+                    item.classList.remove('dragging');
+                    document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+                    draggedId = null;
+                });
+
+                item.addEventListener('dragover', e => {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'move';
+                    if (item.dataset.id !== draggedId) {
+                        item.classList.add('drag-over');
+                    }
+                });
+
+                item.addEventListener('dragleave', () => {
+                    item.classList.remove('drag-over');
+                });
+
+                item.addEventListener('drop', e => {
+                    e.preventDefault();
+                    item.classList.remove('drag-over');
+                    const targetId = item.dataset.id;
+                    if (draggedId && draggedId !== targetId) {
+                        const fromIndex = tasks.findIndex(t => t.id === draggedId);
+                        const toIndex = tasks.findIndex(t => t.id === targetId);
+                        if (fromIndex !== -1 && toIndex !== -1) {
+                            const [moved] = tasks.splice(fromIndex, 1);
+                            tasks.splice(toIndex, 0, moved);
+                            save();
+                        }
+                    }
+                });
+            });
+        }
+
+        document.getElementById('task-input').addEventListener('keydown', e => {
+            if (e.key === 'Enter') addTask();
+        });
+
+        // Khởi chạy
+        initBin();
+    </script>
+</body>
+</html>
