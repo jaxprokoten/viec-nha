@@ -582,8 +582,38 @@
             border-radius: 4px;
         }
 
-        .chat-msg {
+        .chat-msg-wrapper {
             max-width: 85%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-msg-wrapper.other {
+            align-self: flex-start;
+        }
+
+        .chat-msg-wrapper.mine {
+            align-self: flex-end;
+        }
+
+        .msg-author {
+            font-size: 0.68rem;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.5);
+            margin-bottom: 4px;
+            padding: 0 6px;
+        }
+
+        .chat-msg-wrapper.mine .msg-author {
+            text-align: right;
+            color: rgba(167, 139, 250, 0.8);
+        }
+
+        .chat-msg-wrapper.other .msg-author {
+            color: rgba(96, 165, 250, 0.8);
+        }
+
+        .chat-bubble {
             padding: 10px 14px;
             border-radius: 16px;
             font-size: 0.85rem;
@@ -591,31 +621,26 @@
             word-break: break-word;
         }
 
-        .chat-msg.other {
-            align-self: flex-start;
+        .chat-msg-wrapper.other .chat-bubble {
             background: rgba(255, 255, 255, 0.1);
             color: rgba(255, 255, 255, 0.9);
-            border-bottom-left-radius: 4px;
+            border-top-left-radius: 4px;
         }
 
-        .chat-msg.mine {
-            align-self: flex-end;
+        .chat-msg-wrapper.mine .chat-bubble {
             background: linear-gradient(135deg, #667eea, #764ba2);
             color: white;
-            border-bottom-right-radius: 4px;
+            border-top-right-radius: 4px;
         }
 
-        .chat-msg .msg-author {
-            font-size: 0.7rem;
-            font-weight: 600;
-            margin-bottom: 3px;
-            opacity: 0.7;
-        }
-
-        .chat-msg .msg-time {
+        .msg-time {
             font-size: 0.6rem;
             opacity: 0.5;
-            margin-top: 4px;
+            margin-top: 2px;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .chat-msg-wrapper.mine .msg-time {
             text-align: right;
         }
 
@@ -1066,10 +1091,12 @@
                 msgsHtml = chatMessages.map(m => {
                     const isMine = m.author === chatUser;
                     const time = new Date(m.time).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
-                    return `<div class="chat-msg ${isMine ? 'mine' : 'other'}">
+                    return `<div class="chat-msg-wrapper ${isMine ? 'mine' : 'other'}">
                         <div class="msg-author">${escapeHtml(m.author)}</div>
-                        <div>${escapeHtml(m.text)}</div>
-                        <div class="msg-time">${time}</div>
+                        <div class="chat-bubble">
+                            <div>${escapeHtml(m.text)}</div>
+                            <div class="msg-time">${time}</div>
+                        </div>
                     </div>`;
                 }).join('');
             }
